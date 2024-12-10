@@ -29,30 +29,37 @@ fn main() {
         dict.add(a.to_string(), ok);
     }
 
-    println!("{:?}", dict.get("53"));
     println!("Gros connard");
+
+    let mut total = 0;
 
     let re2 = Regex::new(r"(?m)^\d+(?:,\d+)+").unwrap();
     for (m, []) in re2.captures_iter(&contents).map(|c| c.extract()) {
-        let nbs: Vec<u32> = m.split(',')
-            .map(|n| n.parse::<u32>()
+        let nbs: Vec<u64> = m.split(',')
+            .map(|n| n.parse::<u64>()
             .unwrap())
             .collect();
 
         println!("{:?}", nbs);
 
         let empty = Vec::<u64>::new();
+        let mut valid = false;
         for i in 0..nbs.len() {
             let befores = match dict.get(&nbs[i].to_string()) {
                 Some(v) => v,
                 None => &empty,
             };
-            println!("{:?}", befores);
             for n in befores {
-                print!("--{:?}--", n);
+                if nbs[(i+1)..].iter().any(|j| j==n) {
+                    valid = false;
+                }
             }
+        }
+
+        if valid {
+            total += 1
         }
     }
 
-    //println!("{:?}", &ok[1]);
+    println!("{}", total);
 }
