@@ -1,6 +1,32 @@
 use regex::Regex;
 use std::fs;
 
+use image::{ImageBuffer, Luma};
+
+fn save_matrix_as_image(
+    matrix: Vec<Vec<u32>>,
+    output_path: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let height = matrix.len();
+    let width = if height > 0 { matrix[0].len() } else { 0 };
+
+    // Créer un buffer pour l'image
+    let mut img = ImageBuffer::<Luma<u8>, _>::new(width as u32, height as u32);
+
+    for (y, row) in matrix.iter().enumerate() {
+        for (x, &value) in row.iter().enumerate() {
+            // Si `value` est `true`, pixel blanc (255), sinon noir (0)
+            let pixel_value = if value > 0 { 255 } else { 0 };
+            img.put_pixel(x as u32, y as u32, Luma([pixel_value]));
+        }
+    }
+
+    // Sauvegarder l'image au chemin donné
+    img.save(output_path)?;
+
+    Ok(())
+}
+
 fn move_robot(
     index: usize,
     positions: &mut Vec<(u32, u32)>,
@@ -47,15 +73,27 @@ fn main() {
         }
     }
 
-    for _ in 0..100 {
-        for i in 0..current_positions.len() {
-            move_robot(i, &mut current_positions, &speeds, width, height)
+    for second in 0..100 {
+        let mut matrix: Vec<Vec<u32>> = vec![];
+        for y in 0..height {
+            matrix.push(vec![]);
+            for _ in 0..width {
+                matrix[y as usize].push(0)
+            }
         }
+
+        for i in 0..current_positions.len() {
+            move_robot(i, &mut current_positions, &speeds, width, height);
+            let (x, y) = current_positions[i];
+            matrix[y as usize][x as usize] += 1;
+        }
+
+        let _ = save_matrix_as_image(matrix, format!("./images/{}.bmp", second).as_str());
     }
 
     let (mut a, mut b, mut c, mut d) = (0, 0, 0, 0);
 
-    for (x, y) in current_positions {
+    for (x, y) in current_positions.clone() {
         if x < width / 2 && y < height / 2 {
             a += 1;
             continue;
@@ -73,5 +111,23 @@ fn main() {
             continue;
         }
     }
-    println!("{}", a * b * c * d);
+    println!("Part 1 : {}", a * b * c * d);
+
+    for second in 100..10000 {
+        let mut matrix: Vec<Vec<u32>> = vec![];
+        for y in 0..height {
+            matrix.push(vec![]);
+            for _ in 0..width {
+                matrix[y as usize].push(0)
+            }
+        }
+
+        for i in 0..current_positions.len() {
+            move_robot(i, &mut current_positions, &speeds, width, height);
+            let (x, y) = current_positions[i];
+            matrix[y as usize][x as usize] += 1;
+        }
+
+        let _ = save_matrix_as_image(matrix, format!("./images/{}.bmp", second).as_str());
+    }
 }
